@@ -6,9 +6,17 @@ Public AppSec tooling from Gemini's security engineering team, adapted for use i
 
 This repository contains security workflows, scanners, and automation tools for securing Gemini's open source projects.
 
-## Tools
+## Workflows
 
-_Tools will be added here as they are published._
+### Semgrep OSS
+[`.github/workflows/semgrep.yml`](.github/workflows/semgrep.yml)
+
+Runs [Semgrep](https://semgrep.dev) static analysis on pull requests and on a weekly schedule. Uses community rulesets (`p/default`, `p/security-audit`, `p/owasp-top-ten`) with no Semgrep account or token required. Findings are uploaded to GitHub Code Scanning.
+
+### Scan for Secrets
+[`.github/workflows/scan-for-secrets.yml`](.github/workflows/scan-for-secrets.yml)
+
+Scans pull requests for verified secrets using [TruffleHog](https://github.com/trufflesecurity/trufflehog). Only reports verified findings to minimize noise. No token or license required.
 
 ## Contributing
 
