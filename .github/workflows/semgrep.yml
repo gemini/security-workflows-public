@@ -28,9 +28,16 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Run Semgrep OSS
-        # Full scan on every run. No token required; no data leaves the runner.
-        # --config=auto selects rules based on the languages detected in the repo.
+      - name: Run Semgrep OSS (diff-aware)
+        # PR scan: diff-aware via semgrep ci, only surfaces new findings against the merge base.
+        # No SEMGREP_APP_TOKEN = fully local mode; no data leaves the runner.
+        if: github.event_name == 'pull_request'
+        run: semgrep ci --sarif --output=semgrep.sarif --config=auto
+        continue-on-error: true
+
+      - name: Run Semgrep OSS (full scan)
+        # Scheduled/manual scan: full repo scan via semgrep scan.
+        if: github.event_name != 'pull_request'
         run: semgrep scan --sarif --output=semgrep.sarif --config=auto
         continue-on-error: true
 
