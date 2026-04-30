@@ -12,7 +12,7 @@ on:
 
 jobs:
   semgrep:
-    name: semgrep/oss
+    name: public
     runs-on: ubuntu-latest
     container:
       image: semgrep/semgrep
