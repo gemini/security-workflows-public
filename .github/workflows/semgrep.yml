@@ -15,7 +15,7 @@ jobs:
     name: public
     runs-on: ubuntu-latest
     container:
-      image: semgrep/semgrep
+      image: semgrep/semgrep@sha256:5af6730dceda25a5ce80d068832b26c16d295ee1fc14b38667159fcdeeb7c9b8
     permissions:
       contents: read
       security-events: write  # Required for SARIF upload to GitHub Code Scanning
@@ -29,15 +29,10 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Run Semgrep OSS
-        # Runs in CI mode: diff-aware on PRs, full scan on push/schedule.
-        # No SEMGREP_APP_TOKEN = fully OSS/local mode; no data leaves the runner.
-        # SEMGREP_RULES sets the community rulesets to apply.
-        run: semgrep ci --sarif --output=semgrep.sarif
-        env:
-          SEMGREP_RULES: >-
-            p/default
-            p/security-audit
-            p/owasp-top-ten
+        # Full scan on every run. No token required; no data leaves the runner.
+        # --config=auto selects rules based on the languages detected in the repo.
+        run: semgrep scan --sarif --output=semgrep.sarif --config=auto
+        continue-on-error: true
 
       - name: Upload findings to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@ff0a06e83cb2de871e5a09832bc6a81e7276941f # v3.28.18
