@@ -1,0 +1,48 @@
+name: Semgrep OSS
+
+on:
+  pull_request: {}
+  workflow_dispatch: {}
+  merge_group:
+    types: [checks_requested]
+  schedule:
+    # Full scan of main every Monday at 06:17 UTC.
+    # Randomized time to avoid GHA load spikes.
+    - cron: '17 6 * * 1'
+
+jobs:
+  semgrep:
+    name: public
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep:1.161.0@sha256:326e5f41cc972bb423b764a14febbb62bbad29ee1c01820805d077dd868fea48
+    permissions:
+      contents: read
+      security-events: write  # Required for SARIF upload to GitHub Code Scanning
+      actions: read
+    # Skip Dependabot PRs and merge group events (diff scan not useful pre-merge)
+    if: |
+      github.actor != 'dependabot[bot]' &&
+      github.actor != 'github-actions[bot]' &&
+      github.event_name != 'merge_group'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Run Semgrep OSS (diff-aware)
+        # PR scan: diff-aware via semgrep ci, only surfaces new findings against the merge base.
+        # No SEMGREP_APP_TOKEN = fully local mode; no data leaves the runner.
+        if: github.event_name == 'pull_request'
+        run: semgrep ci --sarif --output=semgrep.sarif --config=auto
+        continue-on-error: true
+
+      - name: Run Semgrep OSS (full scan)
+        # Scheduled/manual scan: full repo scan via semgrep scan.
+        if: github.event_name != 'pull_request'
+        run: semgrep scan --sarif --output=semgrep.sarif --config=auto
+        continue-on-error: true
+
+      - name: Upload findings to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@ff0a06e83cb2de871e5a09832bc6a81e7276941f # v3.28.18
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep-oss
